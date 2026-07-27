@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 15mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; font-size: 9.5pt; color: #333; line-height: 1.4; }
+  
+  .top-banner { background: {{ color_primary }}; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .top-banner h1 { font-size: 16pt; font-weight: normal; }
+  .top-banner .doc-type { font-size: 10pt; opacity: 0.9; text-transform: uppercase; letter-spacing: 2px; }
+  
+  .info-strip { background: #f8f8f8; padding: 12px 20px; display: flex; justify-content: space-between; border-bottom: 1px solid #ddd; font-size: 8.5pt; }
+  .info-strip .item { }
+  .info-strip .label { color: #888; text-transform: uppercase; font-size: 7pt; letter-spacing: 0.5px; }
+  .info-strip .value { font-weight: bold; font-size: 10pt; }
+  
+  .body-content { padding: 20px; }
+  
+  .two-col { display: flex; justify-content: space-between; margin-bottom: 20px; }
+  .col { width: 47%; }
+  .col-header { font-size: 8pt; text-transform: uppercase; color: {{ color_primary }}; font-weight: bold; letter-spacing: 1px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 2px solid {{ color_primary }}; }
+  .col p { font-size: 9pt; margin: 2px 0; }
+  .col .highlight { background: {{ color_primary }}11; padding: 8px; margin-top: 8px; border-left: 3px solid {{ color_primary }}; }
+  .col .highlight .big { font-size: 18pt; font-weight: bold; color: {{ color_primary }}; }
+  
+  .charges-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+  .charges-table thead th { background: {{ color_primary }}; color: white; padding: 8px 10px; text-align: left; font-size: 8.5pt; text-transform: uppercase; }
+  .charges-table thead th.num { text-align: right; }
+  .charges-table tbody td { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 9pt; }
+  .charges-table tbody td.num { text-align: right; }
+  .charges-table tbody tr:nth-child(even) { background: #fafafa; }
+  .charges-table tfoot td { padding: 8px 10px; font-weight: bold; border-top: 2px solid #333; }
+  .charges-table tfoot td.num { text-align: right; }
+  
+  .tax-summary { background: #f5f5f5; padding: 12px 15px; margin: 15px 0; display: flex; justify-content: space-between; }
+  .tax-item { text-align: center; }
+  .tax-item .label { font-size: 7.5pt; color: #888; text-transform: uppercase; }
+  .tax-item .value { font-size: 12pt; font-weight: bold; }
+  
+  .footer-bar { background: #f0f0f0; padding: 12px 20px; margin-top: 20px; font-size: 8pt; color: #777; }
+  .footer-bar .reg { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<div class="top-banner">
+  <h1>{{ supplier_name }}</h1>
+  <div class="doc-type">{{ document_type_extended or "Tax Invoice" }}</div>
+</div>
+
+<div class="info-strip">
+  <div class="item">
+    <div class="label">Invoice No.</div>
+    <div class="value">{{ invoice_number or document_number }}</div>
+  </div>
+  <div class="item">
+    <div class="label">Date</div>
+    <div class="value">{{ document_date_formatted }}</div>
+  </div>
+  <div class="item">
+    <div class="label">Due Date</div>
+    <div class="value">{{ due_date_formatted or 'On Receipt' }}</div>
+  </div>
+  <div class="item">
+    <div class="label">Account No.</div>
+    <div class="value">{{ customer_id or 'N/A' }}</div>
+  </div>
+</div>
+
+<div class="body-content">
+
+<div class="two-col">
+  <div class="col">
+    <div class="col-header">Supplier</div>
+    <p><strong>{{ supplier_name }}</strong></p>
+    {% if supplier_address %}<p>{{ supplier_address }}</p>{% endif %}
+    {% if supplier_phone %}<p>Tel: {{ supplier_phone }}</p>{% endif %}
+    {% if supplier_email %}<p>{{ supplier_email }}</p>{% endif %}
+  </div>
+  <div class="col">
+    <div class="col-header">Customer</div>
+    <p><strong>{{ customer_name }}</strong></p>
+    {% if customer_address %}<p>{{ customer_address }}</p>{% endif %}
+    {% if customer_company_registrations %}<p>VAT: {{ customer_company_registrations }}</p>{% endif %}
+    <div class="highlight">
+      <div style="font-size: 8pt; color: #888;">Amount Due</div>
+      <div class="big">{{ currency_symbol }}{{ "%.2f"|format(document_total_amount) }}</div>
+    </div>
+  </div>
+</div>
+
+<table class="charges-table">
+  <thead>
+    <tr>
+      <th>Description</th>
+      <th class="num">Qty</th>
+      <th class="num">Unit Price</th>
+      <th class="num">Tax Rate</th>
+      <th class="num">Amount ({{ document_currency }})</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in line_items %}
+    <tr>
+      <td>{{ item.description }}</td>
+      <td class="num">{{ item.quantity }}</td>
+      <td class="num">{{ "%.2f"|format(item.unit_price) }}</td>
+      <td class="num">{{ item.tax_rate or "—" }}</td>
+      <td class="num">{{ "%.2f"|format(item.amount) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="4">Net Total</td>
+      <td class="num">{{ "%.2f"|format(document_total_net) }}</td>
+    </tr>
+  </tfoot>
+</table>
+
+<div class="tax-summary">
+  {% for tax in taxes %}
+  <div class="tax-item">
+    <div class="label">{{ tax.code or "VAT" }} @ {{ tax.rate }}</div>
+    <div class="value">{{ currency_symbol }}{{ "%.2f"|format(tax.value) }}</div>
+  </div>
+  {% endfor %}
+  <div class="tax-item">
+    <div class="label">Total Tax</div>
+    <div class="value">{{ currency_symbol }}{{ "%.2f"|format(document_total_tax) }}</div>
+  </div>
+  <div class="tax-item">
+    <div class="label" style="color: {{ color_primary }}">Grand Total</div>
+    <div class="value" style="color: {{ color_primary }}; font-size: 14pt;">{{ currency_symbol }}{{ "%.2f"|format(document_total_amount) }}</div>
+  </div>
+</div>
+
+{% if notes %}
+<div style="margin-top: 10px; font-size: 8.5pt; color: #666; padding: 8px; background: #fffbe6; border: 1px solid #ffe0a0;">
+  <strong>Notes:</strong> {{ notes }}
+</div>
+{% endif %}
+
+</div>
+
+<div class="footer-bar">
+  {% if supplier_company_registrations %}
+  <div class="reg">VAT Registration: {{ supplier_company_registrations }}</div>
+  {% endif %}
+  {% if payment_details %}
+  <div>
+    Bank: {% for key, val in payment_details.items() %}{{ key }}: {{ val }} | {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 25mm 20mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 10pt; color: #2d3436; line-height: 1.5; }
+  
+  .top-bar { height: 4px; background: {{ color_primary }}; margin-bottom: 30px; }
+  
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
+  .brand h1 { font-size: 20pt; font-weight: 300; color: {{ color_primary }}; letter-spacing: 2px; }
+  .brand .tagline { font-size: 8pt; color: #999; text-transform: uppercase; letter-spacing: 3px; margin-top: 3px; }
+  
+  .invoice-badge { background: {{ color_primary }}; color: white; padding: 8px 20px; font-size: 11pt; font-weight: 600; letter-spacing: 1px; }
+  
+  .meta-grid { display: flex; justify-content: space-between; margin-bottom: 30px; }
+  .meta-col { width: 30%; }
+  .meta-label { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 1.5px; color: #999; margin-bottom: 4px; }
+  .meta-value { font-size: 10pt; }
+  .meta-value.large { font-size: 14pt; font-weight: 600; }
+  
+  .addresses { display: flex; justify-content: space-between; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+  .addr-block { width: 45%; }
+  .addr-label { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 1.5px; color: {{ color_primary }}; margin-bottom: 6px; font-weight: 600; }
+  .addr-text { font-size: 9pt; color: #555; }
+  
+  .items-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+  .items-table thead th { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 1px; color: #999; padding: 10px 8px; border-bottom: 2px solid #eee; text-align: left; }
+  .items-table thead th.num { text-align: right; }
+  .items-table tbody td { padding: 12px 8px; border-bottom: 1px solid #f5f5f5; font-size: 9.5pt; }
+  .items-table tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .items-table tbody td.desc { color: #2d3436; }
+  .items-table tbody td.desc small { display: block; font-size: 8pt; color: #999; margin-top: 2px; }
+  
+  .summary { display: flex; justify-content: flex-end; }
+  .summary-box { width: 250px; }
+  .summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 9.5pt; }
+  .summary-row.sub { color: #777; }
+  .summary-row.total { font-size: 14pt; font-weight: 700; color: {{ color_primary }}; border-top: 2px solid {{ color_primary }}; padding-top: 10px; margin-top: 5px; }
+  
+  .payment-section { margin-top: 35px; padding-top: 20px; border-top: 1px solid #eee; display: flex; justify-content: space-between; }
+  .payment-block { font-size: 8.5pt; color: #777; }
+  .payment-block strong { color: #2d3436; }
+  
+  .footer-note { margin-top: 30px; text-align: center; font-size: 8pt; color: #bbb; }
+</style>
+</head>
+<body>
+
+<div class="top-bar"></div>
+
+<div class="header">
+  <div class="brand">
+    <h1>{{ supplier_name }}</h1>
+    {% if subcategory %}<div class="tagline">{{ subcategory|replace('_', ' ') }}</div>{% endif %}
+  </div>
+  <div class="invoice-badge">{{ document_type_extended|upper if document_type_extended else 'INVOICE' }}</div>
+</div>
+
+<div class="meta-grid">
+  <div class="meta-col">
+    <div class="meta-label">Invoice Number</div>
+    <div class="meta-value large">{{ invoice_number or document_number }}</div>
+  </div>
+  <div class="meta-col">
+    <div class="meta-label">Issue Date</div>
+    <div class="meta-value">{{ document_date_formatted }}</div>
+    {% if due_date %}
+    <div class="meta-label" style="margin-top: 10px;">Due Date</div>
+    <div class="meta-value">{{ due_date_formatted }}</div>
+    {% endif %}
+  </div>
+  <div class="meta-col">
+    <div class="meta-label">Amount Due</div>
+    <div class="meta-value large" style="color: {{ color_primary }}">{{ currency_symbol }}{{ "%.2f"|format(document_total_amount) }}</div>
+  </div>
+</div>
+
+<div class="addresses">
+  <div class="addr-block">
+    <div class="addr-label">From</div>
+    <div class="addr-text">
+      <strong>{{ supplier_name }}</strong><br>
+      {% if supplier_address %}{{ supplier_address|replace(', ', '<br>')|safe }}<br>{% endif %}
+      {% if supplier_email %}{{ supplier_email }}<br>{% endif %}
+      {% if supplier_company_registrations %}VAT: {{ supplier_company_registrations }}{% endif %}
+    </div>
+  </div>
+  <div class="addr-block">
+    <div class="addr-label">Bill To</div>
+    <div class="addr-text">
+      <strong>{{ customer_name }}</strong><br>
+      {% if customer_address %}{{ customer_address|replace(', ', '<br>')|safe }}<br>{% endif %}
+      {% if customer_company_registrations %}VAT: {{ customer_company_registrations }}{% endif %}
+    </div>
+  </div>
+</div>
+
+<table class="items-table">
+  <thead>
+    <tr>
+      <th style="width: 5%">#</th>
+      <th>Description</th>
+      <th class="num">Qty</th>
+      <th class="num">Unit Price</th>
+      {% if line_items and line_items[0].tax_rate %}<th class="num">Tax</th>{% endif %}
+      <th class="num">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in line_items %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td class="desc">{{ item.description }}</td>
+      <td class="num">{{ item.quantity }}</td>
+      <td class="num">{{ currency_symbol }}{{ "%.2f"|format(item.unit_price) }}</td>
+      {% if line_items[0].tax_rate %}<td class="num">{{ item.tax_rate }}</td>{% endif %}
+      <td class="num">{{ currency_symbol }}{{ "%.2f"|format(item.amount) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="summary">
+  <div class="summary-box">
+    <div class="summary-row sub"><span>Subtotal</span><span>{{ currency_symbol }}{{ "%.2f"|format(document_total_net) }}</span></div>
+    {% for tax in taxes %}
+    <div class="summary-row sub"><span>{{ tax.code or "VAT" }} {{ tax.rate }}</span><span>{{ currency_symbol }}{{ "%.2f"|format(tax.value) }}</span></div>
+    {% endfor %}
+    {% if not taxes and document_total_tax > 0 %}
+    <div class="summary-row sub"><span>Tax</span><span>{{ currency_symbol }}{{ "%.2f"|format(document_total_tax) }}</span></div>
+    {% endif %}
+    <div class="summary-row total"><span>Total</span><span>{{ currency_symbol }}{{ "%.2f"|format(document_total_amount) }}</span></div>
+  </div>
+</div>
+
+{% if payment_details or supplier_phone %}
+<div class="payment-section">
+  {% if payment_details %}
+  <div class="payment-block">
+    <strong>Payment Details</strong><br>
+    {% for key, val in payment_details.items() %}
+    {{ key }}: {{ val }}<br>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <div class="payment-block">
+    <strong>Contact</strong><br>
+    {% if supplier_phone %}{{ supplier_phone }}<br>{% endif %}
+    {% if supplier_email %}{{ supplier_email }}<br>{% endif %}
+    {% if supplier_website %}{{ supplier_website }}{% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div class="footer-note">Thank you for your business</div>
+
+</body>
+</html>

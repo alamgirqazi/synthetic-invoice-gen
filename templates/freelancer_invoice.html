@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 18mm 15mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 10pt; color: #333; line-height: 1.5; }
+  
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; }
+  .brand { }
+  .brand-logo { width: 60px; height: 60px; background: {{ color_primary }}; color: white; display: flex; align-items: center; justify-content: center; font-size: 24pt; font-weight: bold; border-radius: 6px; margin-bottom: 10px; }
+  .brand-name { font-size: 14pt; font-weight: bold; color: {{ color_primary }}; }
+  .brand-address { font-size: 9pt; color: #666; margin-top: 4px; }
+  .brand-contact { font-size: 9pt; color: #666; }
+  
+  .date-box { text-align: right; }
+  .date-label { font-size: 9pt; color: {{ color_primary }}; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+  .date-value { font-size: 11pt; }
+  .invoice-label { font-size: 9pt; color: {{ color_primary }}; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-top: 15px; }
+  .invoice-value { font-size: 11pt; }
+  
+  .bill-section { display: flex; justify-content: space-between; margin-bottom: 20px; padding: 12px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
+  .bill-to { }
+  .section-label { font-size: 9pt; color: {{ color_primary }}; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .bill-name { font-weight: bold; }
+  .bill-address { font-size: 9pt; color: #555; }
+  
+  .due-section { text-align: right; }
+  
+  .project-label { font-size: 9pt; color: {{ color_primary }}; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; text-align: center; margin: 15px 0 8px; }
+  .project-desc { text-align: center; font-size: 9.5pt; color: #555; margin-bottom: 15px; }
+  
+  .items-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+  .items-table thead th { font-size: 8.5pt; color: {{ color_primary }}; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 6px; border-bottom: 2px solid {{ color_primary }}; text-align: left; }
+  .items-table thead th.num { text-align: right; }
+  .items-table tbody td { padding: 8px 6px; border-bottom: 1px solid #eee; font-size: 9.5pt; }
+  .items-table tbody td.num { text-align: right; }
+  .items-table tbody tr.empty td { color: #ccc; }
+  
+  .totals-area { display: flex; justify-content: space-between; margin-top: 15px; align-items: flex-end; }
+  .remarks { font-size: 8.5pt; color: #666; }
+  .remarks .section-label { margin-bottom: 4px; }
+  
+  .totals-table { text-align: right; }
+  .totals-table table { border-collapse: collapse; }
+  .totals-table td { padding: 3px 8px; font-size: 10pt; }
+  .totals-table td:first-child { text-align: right; color: #666; }
+  .totals-table td:last-child { font-weight: bold; }
+  .totals-table .total-row { background: {{ color_primary }}15; }
+  .totals-table .total-row td { padding: 6px 8px; font-size: 11pt; font-weight: bold; }
+  
+  .thank-you { text-align: center; margin-top: 40px; }
+  .thank-you h2 { color: {{ color_primary }}; font-size: 18pt; margin-bottom: 8px; }
+  .thank-you p { font-size: 9pt; color: #888; }
+  .thank-you a { color: {{ color_primary }}; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand">
+    <div class="brand-logo">{{ supplier_name[:2]|upper }}</div>
+    <div class="brand-name">{{ supplier_name }}</div>
+    <div class="brand-address">{{ supplier_address }}</div>
+    <div class="brand-contact">
+      {% if supplier_phone %}{{ supplier_phone }}<br>{% endif %}
+      {% if supplier_email %}{{ supplier_email }}{% endif %}
+    </div>
+  </div>
+  
+  <div class="date-box">
+    <div class="date-label">Date</div>
+    <div class="date-value">{{ document_date_formatted }}</div>
+    
+    <div class="invoice-label" style="margin-top: 20px;">Invoice No.</div>
+    <div class="invoice-value">{{ invoice_number or document_number }}</div>
+  </div>
+</div>
+
+<div class="bill-section">
+  <div class="bill-to">
+    <div class="section-label">Bill To</div>
+    <div class="bill-name">ATTN: {{ customer_name }}</div>
+    {% if customer_address %}
+    <div class="bill-address">
+      {{ customer_address|replace(', ', '<br>')|safe }}
+    </div>
+    {% endif %}
+  </div>
+  
+  <div class="due-section">
+    <div class="section-label">Date Payment Due</div>
+    <div class="date-value">{{ due_date_formatted or document_date_formatted }}</div>
+    {% if reference_numbers %}
+    <div class="section-label" style="margin-top: 15px;">Lead Time</div>
+    <div>{{ reference_numbers }}</div>
+    {% endif %}
+  </div>
+</div>
+
+{% if subcategory or notes %}
+<div class="project-label">Project Details</div>
+<div class="project-desc">{{ notes or subcategory }}</div>
+{% endif %}
+
+<table class="items-table">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Description of Work</th>
+      <th class="num">Hours</th>
+      <th class="num">Rate</th>
+      <th class="num">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in line_items %}
+    <tr>
+      <td>{{ document_date_formatted }}</td>
+      <td>{{ item.description }}</td>
+      <td class="num">{{ item.quantity }}</td>
+      <td class="num">{{ currency_symbol }}{{ "%.2f"|format(item.unit_price) }}</td>
+      <td class="num">{{ currency_symbol }}{{ "%.2f"|format(item.amount) }}</td>
+    </tr>
+    {% endfor %}
+    {% for i in range(max(0, 8 - line_items|length)) %}
+    <tr class="empty"><td></td><td></td><td></td><td></td><td class="num">{{ currency_symbol }}0.00</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="totals-area">
+  <div class="remarks">
+    <div class="section-label">Remarks/Instructions</div>
+    <div>Make checks payable to: {{ supplier_name }}</div>
+  </div>
+  
+  <div class="totals-table">
+    <table>
+      <tr><td>SUBTOTAL</td><td>{{ currency_symbol }}{{ "%.2f"|format(document_total_net) }}</td></tr>
+      {% for tax in taxes %}
+      <tr><td>TAX RATE</td><td>{{ tax.rate }}</td><td>{{ currency_symbol }}{{ "%.2f"|format(tax.value) }}</td></tr>
+      {% endfor %}
+      {% if not taxes and document_total_tax > 0 %}
+      <tr><td>TAX</td><td></td><td>{{ currency_symbol }}{{ "%.2f"|format(document_total_tax) }}</td></tr>
+      {% elif not taxes %}
+      <tr><td>TAX RATE</td><td>0.00%</td><td>{{ currency_symbol }}0.00</td></tr>
+      {% endif %}
+      <tr class="total-row"><td>TOTAL</td><td colspan="{% if taxes %}2{% else %}1{% endif %}">{{ currency_symbol }}{{ "%.2f"|format(document_total_amount) }}</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="thank-you">
+  <h2>THANK YOU</h2>
+  <p>For questions concerning this invoice, please contact</p>
+  <p>{{ supplier_name }} - {{ supplier_phone }}</p>
+  {% if supplier_website %}<p><a href="#">{{ supplier_website }}</a></p>{% endif %}
+</div>
+
+</body>
+</html>

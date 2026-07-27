@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 15mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 9pt; color: #333; line-height: 1.35; }
+
+  .header-bar { background: {{ color_primary }}; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; }
+  .header-bar h1 { color: white; font-size: 13pt; font-weight: 600; }
+  .header-bar .doc-id { color: rgba(255,255,255,0.85); font-size: 10pt; font-family: 'Courier New', monospace; }
+
+  .sub-bar { background: #f5f5f5; padding: 8px 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #ddd; font-size: 8pt; }
+  .sub-item .label { color: #999; text-transform: uppercase; font-size: 7pt; letter-spacing: 0.5px; }
+  .sub-item .value { font-weight: bold; font-size: 9.5pt; }
+
+  .body { padding: 15px; }
+
+  .address-row { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 15px; }
+  .addr-box { width: 31%; border: 1px solid #ddd; padding: 10px; font-size: 8.5pt; }
+  .addr-box .title { font-size: 7pt; text-transform: uppercase; letter-spacing: 1px; color: {{ color_primary }}; font-weight: bold; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 2px solid {{ color_primary }}; }
+  .addr-box .name { font-weight: bold; margin-bottom: 3px; }
+  .addr-box .detail { color: #555; font-size: 8pt; }
+
+  .items-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 8.5pt; }
+  .items-table thead th { background: #f0f0f0; padding: 7px 8px; text-align: left; font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.5px; color: #666; border-bottom: 2px solid {{ color_primary }}; }
+  .items-table thead th.num { text-align: right; }
+  .items-table thead th.center { text-align: center; }
+  .items-table tbody td { padding: 7px 8px; border-bottom: 1px solid #eee; }
+  .items-table tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .items-table tbody td.center { text-align: center; }
+  .items-table tbody td.sku { font-family: 'Courier New', monospace; font-size: 8pt; color: #888; }
+
+  .totals-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px; padding-top: 12px; border-top: 2px solid #333; }
+  .totals-left { font-size: 8pt; color: #666; max-width: 55%; }
+  .totals-right { text-align: right; }
+  .totals-right .line { display: flex; justify-content: flex-end; gap: 30px; padding: 2px 0; font-size: 9pt; }
+  .totals-right .line.grand { font-size: 12pt; font-weight: bold; color: {{ color_primary }}; padding-top: 6px; border-top: 1px solid #ccc; margin-top: 4px; }
+
+  .stamps-row { display: flex; justify-content: space-between; margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ccc; }
+  .stamp-box { width: 30%; text-align: center; }
+  .stamp-box .stamp-label { font-size: 7pt; text-transform: uppercase; letter-spacing: 1px; color: #999; margin-bottom: 30px; }
+  .stamp-box .stamp-line { border-top: 1px solid #333; padding-top: 4px; font-size: 7pt; color: #999; }
+
+  .footer-note { margin-top: 15px; font-size: 7pt; color: #bbb; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="header-bar">
+  <h1>{{ supplier_name }}</h1>
+  <div class="doc-id">{{ document_type_extended|upper if document_type_extended else 'DELIVERY NOTE' }} #{{ document_number or invoice_number }}</div>
+</div>
+
+<div class="sub-bar">
+  <div class="sub-item">
+    <div class="label">Date</div>
+    <div class="value">{{ document_date_formatted }}</div>
+  </div>
+  {% if reference_numbers %}
+  <div class="sub-item">
+    <div class="label">Order Ref</div>
+    <div class="value">{{ reference_numbers }}</div>
+  </div>
+  {% endif %}
+  {% if po_number %}
+  <div class="sub-item">
+    <div class="label">PO Number</div>
+    <div class="value">{{ po_number }}</div>
+  </div>
+  {% endif %}
+  <div class="sub-item">
+    <div class="label">Currency</div>
+    <div class="value">{{ document_currency }}</div>
+  </div>
+</div>
+
+<div class="body">
+
+<div class="address-row">
+  <div class="addr-box">
+    <div class="title">Supplier</div>
+    <div class="name">{{ supplier_name }}</div>
+    {% if supplier_address %}<div class="detail">{{ supplier_address }}</div>{% endif %}
+    {% if supplier_phone %}<div class="detail">Tel: {{ supplier_phone }}</div>{% endif %}
+    {% if supplier_company_registrations %}<div class="detail">VAT: {{ supplier_company_registrations }}</div>{% endif %}
+  </div>
+  <div class="addr-box">
+    <div class="title">Bill To</div>
+    <div class="name">{{ customer_name or "—" }}</div>
+    {% if billing_address %}<div class="detail">{{ billing_address }}</div>
+    {% elif customer_address %}<div class="detail">{{ customer_address }}</div>{% endif %}
+    {% if customer_company_registrations %}<div class="detail">VAT: {{ customer_company_registrations }}</div>{% endif %}
+  </div>
+  <div class="addr-box">
+    <div class="title">Ship To</div>
+    <div class="name">{{ customer_name or "—" }}</div>
+    {% if shipping_address %}<div class="detail">{{ shipping_address }}</div>
+    {% elif customer_address %}<div class="detail">{{ customer_address }}</div>{% endif %}
+  </div>
+</div>
+
+<table class="items-table">
+  <thead>
+    <tr>
+      <th style="width: 6%">#</th>
+      <th>Description</th>
+      <th class="center">Qty Ordered</th>
+      <th class="center">Qty Shipped</th>
+      <th class="num">Unit Price</th>
+      <th class="num">Tax</th>
+      <th class="num">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in line_items %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ item.description }}</td>
+      <td class="center">{{ item.quantity }}</td>
+      <td class="center">{{ item.quantity }}</td>
+      <td class="num">{{ currency_symbol }}{{ "%.2f"|format(item.unit_price) }}</td>
+      <td class="num">{{ item.tax_rate or "—" }}</td>
+      <td class="num">{{ currency_symbol }}{{ "%.2f"|format(item.amount) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="totals-bar">
+  <div class="totals-left">
+    {% if notes %}<strong>Notes:</strong> {{ notes }}<br>{% endif %}
+    Items: {{ line_items|length }} | Total Qty: {{ line_items|sum(attribute='quantity')|int }}
+  </div>
+  <div class="totals-right">
+    <div class="line"><span>Subtotal</span><span>{{ currency_symbol }}{{ "%.2f"|format(document_total_net) }}</span></div>
+    {% for tax in taxes %}
+    <div class="line"><span>{{ tax.code or "Tax" }} {{ tax.rate }}</span><span>{{ currency_symbol }}{{ "%.2f"|format(tax.value) }}</span></div>
+    {% endfor %}
+    {% if not taxes and document_total_tax > 0 %}
+    <div class="line"><span>Tax</span><span>{{ currency_symbol }}{{ "%.2f"|format(document_total_tax) }}</span></div>
+    {% endif %}
+    <div class="line grand"><span>Total</span><span>{{ currency_symbol }}{{ "%.2f"|format(document_total_amount) }}</span></div>
+  </div>
+</div>
+
+<div class="stamps-row">
+  <div class="stamp-box">
+    <div class="stamp-label">Dispatched By</div>
+    <div class="stamp-line">Signature / Date</div>
+  </div>
+  <div class="stamp-box">
+    <div class="stamp-label">Received By</div>
+    <div class="stamp-line">Signature / Date</div>
+  </div>
+  <div class="stamp-box">
+    <div class="stamp-label">Approved By</div>
+    <div class="stamp-line">Signature / Date</div>
+  </div>
+</div>
+
+</div>
+
+<div class="footer-note">
+  This document is a delivery note / packing slip. For payment enquiries, contact {{ supplier_email or supplier_phone or supplier_name }}.
+</div>
+
+</body>
+</html>

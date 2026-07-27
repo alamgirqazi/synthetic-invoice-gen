@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: 80mm 320mm; margin: 5mm 4mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Courier New', 'Courier 10 Pitch', monospace;
+    font-size: 8.5pt;
+    color: #111;
+    line-height: 1.3;
+    width: 72mm;
+    background: #fefef8;
+  }
+
+  .center { text-align: center; }
+  .right { text-align: right; }
+  .bold { font-weight: bold; }
+
+  /* Dashed separator — mimics real thermal printer */
+  .sep {
+    border: none;
+    border-top: 1px dashed #444;
+    margin: 7px 0;
+  }
+  .sep-double {
+    border: none;
+    border-top: 2px solid #222;
+    margin: 7px 0;
+  }
+  .sep-equals {
+    text-align: center;
+    font-size: 7pt;
+    color: #555;
+    letter-spacing: 1px;
+    margin: 5px 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  /* ── LOGO BLOCK ── */
+  .logo-block { text-align: center; margin-bottom: 6px; padding: 4px 0; }
+  .logo-icon {
+    display: inline-block;
+    width: 28px; height: 28px;
+    background: #111;
+    color: #fefef8;
+    font-size: 16pt;
+    font-weight: bold;
+    line-height: 28px;
+    text-align: center;
+    margin-bottom: 3px;
+    border-radius: 3px;
+  }
+  .store-name {
+    font-size: 14pt;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    margin-bottom: 0;
+    line-height: 1.1;
+  }
+  .store-tagline {
+    font-size: 8pt;
+    letter-spacing: 2px;
+    color: #333;
+    margin-top: 1px;
+  }
+  .store-addr {
+    font-size: 7.5pt;
+    color: #444;
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  /* ── RECEIPT TYPE HEADER ── */
+  .receipt-type {
+    text-align: center;
+    font-size: 12pt;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin: 8px 0 6px;
+  }
+
+  /* ── META (date, time, trans#) ── */
+  .meta-section { margin: 5px 0; font-size: 8pt; }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 1px 0;
+  }
+
+  /* ── ITEMS TABLE ── */
+  .items-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 7.5pt;
+    font-weight: bold;
+    padding: 3px 0;
+    letter-spacing: 0.3px;
+  }
+  .items-header .col-desc { flex: 1; }
+  .items-header .col-qty { width: 24px; text-align: center; }
+  .items-header .col-price { width: 52px; text-align: right; }
+  .items-header .col-total { width: 52px; text-align: right; }
+
+  .item-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    font-size: 8pt;
+  }
+  .item-row .col-desc {
+    flex: 1;
+    text-transform: uppercase;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding-right: 4px;
+  }
+  .item-row .col-qty { width: 24px; text-align: center; }
+  .item-row .col-price { width: 52px; text-align: right; }
+  .item-row .col-total { width: 52px; text-align: right; font-weight: bold; }
+
+  /* ── TOTALS ── */
+  .totals-section { margin: 4px 0; }
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    font-size: 8.5pt;
+  }
+  .total-row.grand {
+    font-size: 11pt;
+    font-weight: bold;
+    padding: 4px 0;
+  }
+  .total-row .dots {
+    flex: 1;
+    border-bottom: 1px dotted #888;
+    margin: 0 4px 3px;
+  }
+
+  /* ── PAYMENT ── */
+  .payment-section {
+    margin: 6px 0;
+    font-size: 8pt;
+    line-height: 1.5;
+  }
+
+  /* ── BARCODE ── */
+  .barcode-area {
+    text-align: center;
+    margin: 10px 0 6px;
+  }
+  .barcode-bars {
+    font-family: 'Courier New', monospace;
+    font-size: 9pt;
+    letter-spacing: 0px;
+    line-height: 1;
+    color: #111;
+    margin-bottom: 2px;
+  }
+  .barcode-number {
+    font-family: 'Courier New', monospace;
+    font-size: 7pt;
+    letter-spacing: 3px;
+    color: #444;
+  }
+
+  /* ── FOOTER ── */
+  .footer-msg {
+    text-align: center;
+    font-size: 8.5pt;
+    font-weight: bold;
+    margin-top: 8px;
+    padding: 6px 0 2px;
+    line-height: 1.5;
+    letter-spacing: 0.3px;
+  }
+  .footer-small {
+    text-align: center;
+    font-size: 6.5pt;
+    color: #999;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGO BLOCK ═══ -->
+<div class="logo-block">
+  <div class="logo-icon">{{ supplier_name[:1]|upper }}</div>
+  <div class="store-name">{{ supplier_name|upper }}</div>
+  {% if subcategory %}
+  <div class="store-tagline">{{ subcategory|upper|replace('_', ' ') }}</div>
+  {% endif %}
+  <div class="store-addr">
+    {% if supplier_address %}{{ supplier_address }}<br>{% endif %}
+    {% if supplier_phone %}Phone: {{ supplier_phone }}{% endif %}
+  </div>
+</div>
+
+<hr class="sep">
+
+<!-- ═══ RECEIPT TYPE ═══ -->
+<div class="receipt-type">
+  {% if document_type_extended %}
+    {{ document_type_extended|upper }}
+  {% else %}
+    SALES RECEIPT
+  {% endif %}
+</div>
+
+<hr class="sep">
+
+<!-- ═══ META INFO ═══ -->
+<div class="meta-section">
+  <div class="meta-row">
+    <span>DATE: {{ document_date_formatted }}</span>
+    <span>TIME: {{ document_time or "14:32:01" }}</span>
+  </div>
+  {% if receipt_number or document_number %}
+  <div class="meta-row">
+    <span>TRANS #: {{ receipt_number or document_number }}</span>
+  </div>
+  {% endif %}
+  {% if customer_name %}
+  <div class="meta-row">
+    <span>CUSTOMER: {{ customer_name|upper }}</span>
+  </div>
+  {% endif %}
+</div>
+
+<hr class="sep">
+
+<!-- ═══ ITEMS ═══ -->
+<div class="items-header">
+  <span class="col-desc">ITEM DESCRIPTION</span>
+  <span class="col-qty">QTY</span>
+  <span class="col-price">UNIT PRICE</span>
+  <span class="col-total">TOTAL</span>
+</div>
+
+<div class="sep-equals">----------------------------------------</div>
+
+{% for item in line_items %}
+<div class="item-row">
+  <span class="col-desc">{{ item.description[:26]|upper }}</span>
+  <span class="col-qty">{{ item.quantity|int }}</span>
+  <span class="col-price">{{ currency_symbol }}{{ "%.2f"|format(item.unit_price) }}</span>
+  <span class="col-total">{{ currency_symbol }}{{ "%.2f"|format(item.amount) }}</span>
+</div>
+{% endfor %}
+
+<hr class="sep-double">
+
+<!-- ═══ TOTALS ═══ -->
+<div class="totals-section">
+  <div class="total-row">
+    <span>SUBTOTAL</span>
+    <span class="dots"></span>
+    <span>{{ currency_symbol }}{{ "%.2f"|format(document_total_net) }}</span>
+  </div>
+  {% for tax in taxes %}
+  <div class="total-row">
+    <span>{{ tax.code or "SALES TAX" }} ({{ tax.rate }})</span>
+    <span class="dots"></span>
+    <span>{{ currency_symbol }}{{ "%.2f"|format(tax.value) }}</span>
+  </div>
+  {% endfor %}
+  {% if not taxes and document_total_tax > 0 %}
+  <div class="total-row">
+    <span>TAX</span>
+    <span class="dots"></span>
+    <span>{{ currency_symbol }}{{ "%.2f"|format(document_total_tax) }}</span>
+  </div>
+  {% endif %}
+</div>
+
+<hr class="sep">
+
+<div class="totals-section">
+  <div class="total-row grand">
+    <span>TOTAL</span>
+    <span class="dots"></span>
+    <span>{{ currency_symbol }}{{ "%.2f"|format(document_total_amount) }}</span>
+  </div>
+</div>
+
+<hr class="sep">
+
+<!-- ═══ PAYMENT ═══ -->
+<div class="payment-section">
+  <div><strong>PAYMENT METHOD: {{ payment_method|upper or "CARD" }}</strong></div>
+  {% if document_total_amount > 15 %}
+  <div>XXXX-XXXX-XXXX-{{ "%04d"|format(range(1000,9999)|random) }}</div>
+  <div>AUTH CODE: {{ "%06d"|format(range(100000,999999)|random) }}</div>
+  {% endif %}
+</div>
+
+<!-- ═══ BARCODE ═══ -->
+<div class="barcode-area">
+  <div class="barcode-bars">
+    ||||| |||| ||||| |||| ||||| |||| |||||
+  </div>
+  <div class="barcode-number">{{ receipt_number or document_number or "0000000000" }}</div>
+</div>
+
+<hr class="sep">
+
+<!-- ═══ FOOTER ═══ -->
+<div class="footer-msg">
+  THANK YOU FOR SHOPPING AT {{ supplier_name|upper }}!<br>
+  HAVE A GREAT DAY!
+</div>
+
+{% if supplier_website %}
+<div class="footer-small">{{ supplier_website }}</div>
+{% endif %}
+
+{% if supplier_company_registrations %}
+<div class="footer-small">VAT: {{ supplier_company_registrations }}</div>
+{% endif %}
+
+<div class="footer-small">
+  {{ document_date_formatted }} {{ document_time or "" }}
+  &nbsp;&nbsp;*** CUSTOMER COPY ***
+</div>
+
+</body>
+</html>

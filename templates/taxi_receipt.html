@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: 80mm 140mm; margin: 5mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 9pt; color: #333; line-height: 1.3; width: 70mm; }
+
+  .header { text-align: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid {{ color_primary }}; }
+  .company { font-size: 12pt; font-weight: bold; color: {{ color_primary }}; }
+  .license { font-size: 7pt; color: #999; margin-top: 2px; letter-spacing: 1px; }
+  .contact { font-size: 7pt; color: #777; margin-top: 2px; }
+
+  .trip-info { margin: 8px 0; font-size: 8.5pt; }
+  .trip-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #ddd; }
+  .trip-label { color: #888; font-size: 7.5pt; text-transform: uppercase; }
+  .trip-value { font-weight: bold; }
+
+  .fare-section { margin: 10px 0; }
+  .fare-row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 8.5pt; }
+  .fare-row.total { font-size: 13pt; font-weight: bold; color: {{ color_primary }}; padding: 6px 0; border-top: 2px solid {{ color_primary }}; border-bottom: 2px solid {{ color_primary }}; margin: 4px 0; }
+
+  .payment { text-align: center; margin: 8px 0; font-size: 8pt; color: #666; }
+  .payment .method { font-weight: bold; color: #333; font-size: 9pt; }
+
+  .footer { text-align: center; margin-top: 10px; font-size: 7pt; color: #aaa; }
+  .receipt-id { font-family: 'Courier New', monospace; letter-spacing: 2px; font-size: 7.5pt; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="company">{{ supplier_name }}</div>
+  {% if supplier_company_registrations %}
+  <div class="license">Lic: {{ supplier_company_registrations }}</div>
+  {% endif %}
+  <div class="contact">
+    {% if supplier_phone %}{{ supplier_phone }}{% endif %}
+    {% if supplier_address %} | {{ supplier_address }}{% endif %}
+  </div>
+</div>
+
+<div class="trip-info">
+  <div class="trip-row"><span class="trip-label">Date</span><span class="trip-value">{{ document_date_formatted }}</span></div>
+  <div class="trip-row"><span class="trip-label">Time</span><span class="trip-value">{{ document_time or "14:35" }}</span></div>
+  {% if customer_name %}
+  <div class="trip-row"><span class="trip-label">Passenger</span><span class="trip-value">{{ customer_name }}</span></div>
+  {% endif %}
+  {% if reference_numbers %}
+  <div class="trip-row"><span class="trip-label">Route</span><span class="trip-value">{{ reference_numbers }}</span></div>
+  {% endif %}
+  {% if notes %}
+  <div class="trip-row"><span class="trip-label">Notes</span><span class="trip-value">{{ notes }}</span></div>
+  {% endif %}
+</div>
+
+<div class="fare-section">
+  {% for item in line_items %}
+  <div class="fare-row"><span>{{ item.description }}</span><span>{{ currency_symbol }}{{ "%.2f"|format(item.amount) }}</span></div>
+  {% endfor %}
+  {% if document_total_tax > 0 %}
+  <div class="fare-row"><span>Tax</span><span>{{ currency_symbol }}{{ "%.2f"|format(document_total_tax) }}</span></div>
+  {% endif %}
+  <div class="fare-row total"><span>TOTAL</span><span>{{ currency_symbol }}{{ "%.2f"|format(document_total_amount) }}</span></div>
+</div>
+
+<div class="payment">
+  <div class="method">{{ payment_method or "Card" }}</div>
+  {% if document_total_amount > 20 %}
+  Card ending {{ "%04d"|format(range(1000,9999)|random) }}
+  {% endif %}
+</div>
+
+<div class="footer">
+  Receipt: <span class="receipt-id">{{ receipt_number or document_number }}</span><br>
+  Thank you for travelling with {{ supplier_name }}
+  {% if supplier_website %}<br>{{ supplier_website }}{% endif %}
+</div>
+
+</body>
+</html>

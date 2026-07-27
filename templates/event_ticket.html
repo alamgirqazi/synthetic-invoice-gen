@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 20mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11pt; color: #39364f; line-height: 1.6; }
+  
+  h1 { font-size: 22pt; font-weight: bold; color: #1e0a3c; margin-bottom: 8px; }
+  .order-meta { font-size: 10pt; color: #6f7287; margin-bottom: 8px; }
+  .order-meta a { color: {{ color_primary }}; text-decoration: none; }
+  
+  .payment-line { font-size: 11pt; color: #6f7287; margin: 20px 0 5px; }
+  .payment-line strong { color: #39364f; }
+  .card-statement { font-size: 9.5pt; color: #a0a0b0; margin-bottom: 25px; }
+  
+  .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+  .items-table td { padding: 12px 0; border-bottom: 1px solid #edf0f4; font-size: 10.5pt; }
+  .items-table .name { }
+  .items-table .qty { text-align: center; color: #6f7287; }
+  .items-table .qty strong { color: #1e0a3c; font-weight: 700; }
+  .items-table .price { text-align: right; }
+  
+  .total-line { text-align: right; font-size: 16pt; font-weight: bold; color: {{ color_primary }}; margin: 15px 0 30px; padding-top: 15px; border-top: 2px solid #edf0f4; }
+  
+  .actions { margin: 20px 0; }
+  .actions a { color: {{ color_primary }}; text-decoration: none; font-weight: 600; }
+  .actions p { font-size: 10pt; color: #6f7287; margin: 8px 0; }
+  .actions strong { color: #39364f; }
+  
+  .footer { margin-top: 25px; font-size: 9pt; color: #a0a0b0; }
+  .footer a { color: {{ color_primary }}; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<h1>Order Summary</h1>
+<div class="order-meta">
+  Order <a href="#">#{{ document_number or receipt_number }}</a> - {{ document_date_display }}
+</div>
+
+<div class="payment-line">
+  <strong>{{ currency_symbol }}{{ "%.2f"|format(document_total_amount) }}</strong> paid by {{ payment_method or "Card" }}
+</div>
+<div class="card-statement">
+  Appears on your card statement as {{ supplier_name|upper|truncate(30, true, '..') }}
+</div>
+
+<table class="items-table">
+  {% for item in line_items %}
+  <tr>
+    <td class="name">{{ customer_name }}</td>
+    <td class="qty">{{ item.quantity }} x <strong>{{ item.description|upper }}</strong></td>
+    <td class="price">{{ currency_symbol }}{{ "%.2f"|format(item.amount) }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<div class="total-line">
+  {{ currency_symbol }}{{ "%.2f"|format(document_total_amount) }}
+</div>
+
+<div class="actions">
+  <a href="#">View and manage</a> <span style="color: #39364f; font-weight: 700;">your order online</span>
+  <p><strong>Printable PDF tickets are attached to this email</strong></p>
+  <p><a href="#">Contact the organiser</a> for any questions related to this purchase.</p>
+</div>
+
+<div class="footer">
+  This order is subject to {{ supplier_name }} <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>, and <a href="#">Cookie Policy</a>.
+</div>
+
+</body>
+</html>
