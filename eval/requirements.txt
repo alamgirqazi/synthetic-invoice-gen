@@ -1,0 +1,18 @@
+# Web framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+
+# Data / validation
+pydantic>=2.5.0
+numpy>=1.24.0
+
+# Line-item matching (Hungarian algorithm)
+scipy>=1.11.0
+
+# HTTP client (for integration tests)
+httpx>=0.26.0
+fastapi
+uvicorn
+python-multipart
+sentence-transformers
