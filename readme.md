@@ -30,6 +30,23 @@ afterwards, as a controlled and independent variable.
 Supporting scripts: `split_records.py` (shard a record file), `upload_to_hf.py` (publish to Hugging
 Face), `evaluate.py` (quick sanity checks).
 
+### Also in this repository
+
+| Directory | Contents |
+| --- | --- |
+| `eval/` | Schema-driven evaluation framework used to produce the baseline results reported in the paper. Scores a prediction file against the ground truth field by field, with type-aware comparators, Hungarian matching for line items, and Entity F1 / ANLS. CLI and FastAPI entry points; see `eval/README.md`. |
+| `ocr/` | Model-agnostic extraction harness. Runs a vision–language model over the images with a schema-driven structured-output prompt, with parse recovery for models that emit reasoning text instead of JSON. See `ocr/readme.md`. |
+
+Neither directory is needed to generate the dataset — they are released so that the reported
+baseline can be reproduced.
+
+To score a prediction file against the released ground truth:
+
+```bash
+cd eval
+python eval.py --gt ground_truth_released.json --pred my_model.json
+```
+
 ## Installation
 
 ```bash
@@ -125,13 +142,14 @@ released corpus is the remaining 938. The excluded file names and reasons ship w
 
 ## Templates
 
-Ten template files are in `templates/`. **Six were used for the released corpus:**
+Nine template files are in `templates/`. **Six were used for the released corpus:**
 
 `formal_corporate` · `modern_minimal` · `pos_thermal` · `freelancer_invoice` · `event_ticket` · `utility_bill`
 
-The other four — `delivery_note`, `retail_receipt`, `taxi_receipt`, `hotel_receipt` — are retained
-for users extending the corpus. Their document types are still sampled at generation time and are
-mapped onto one of the six rendered layouts by `DOC_TYPE_TO_LAYOUT`.
+The other three — `delivery_note`, `retail_receipt`, `taxi_receipt` — are retained for users
+extending the corpus but are not reachable from `DOC_TYPE_TO_LAYOUT`, which maps all fifteen document
+types onto the six layouts above. A taxi receipt, for example, is sampled as a document type but
+rendered through `pos_thermal`.
 
 Template selection is rule-based on the record's layout hint, document type, subcategory and
 category, with a weighted random fallback. Each render draws a colour scheme from a ten-palette pool

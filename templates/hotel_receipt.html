@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 15mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Georgia', 'Times New Roman', serif; font-size: 9.5pt; color: #2c2c2c; line-height: 1.4; }
+
+  .hotel-header { text-align: center; padding-bottom: 12px; border-bottom: 1px solid #b8a88a; margin-bottom: 15px; }
+  .hotel-name { font-size: 20pt; font-weight: normal; letter-spacing: 4px; color: {{ color_primary }}; text-transform: uppercase; }
+  .hotel-stars { color: {{ color_primary }}; font-size: 10pt; letter-spacing: 2px; margin: 4px 0; }
+  .hotel-address { font-size: 8pt; color: #777; letter-spacing: 1px; }
+
+  .folio-title { text-align: center; font-size: 11pt; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; color: {{ color_primary }}; margin: 15px 0; padding: 8px 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; }
+
+  .guest-info { display: flex; justify-content: space-between; margin-bottom: 18px; }
+  .guest-col { width: 48%; font-size: 9pt; }
+  .info-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #ddd; }
+  .info-label { color: #888; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; }
+  .info-value { font-weight: bold; }
+
+  .charges-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  .charges-table thead th { font-size: 8pt; text-transform: uppercase; letter-spacing: 1px; color: {{ color_primary }}; padding: 8px 6px; border-bottom: 2px solid {{ color_primary }}; text-align: left; }
+  .charges-table thead th.num { text-align: right; }
+  .charges-table tbody td { padding: 6px; border-bottom: 1px solid #eee; font-size: 9pt; }
+  .charges-table tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .charges-table tbody td.date { color: #888; font-size: 8pt; }
+  .charges-table tbody tr:nth-child(even) { background: #faf9f7; }
+
+  .totals-section { margin-top: 12px; border-top: 2px solid {{ color_primary }}; padding-top: 10px; }
+  .total-line { display: flex; justify-content: flex-end; gap: 40px; padding: 3px 6px; font-size: 9.5pt; }
+  .total-line.grand { font-size: 13pt; font-weight: bold; color: {{ color_primary }}; padding-top: 8px; margin-top: 4px; border-top: 1px solid #ccc; }
+  .total-label { text-align: right; width: 150px; }
+  .total-value { text-align: right; width: 100px; font-weight: bold; }
+
+  .payment-note { margin-top: 20px; text-align: center; font-size: 8.5pt; color: #999; font-style: italic; }
+  .footer { margin-top: 25px; text-align: center; font-size: 7.5pt; color: #bbb; border-top: 1px solid #eee; padding-top: 10px; }
+  .footer a { color: {{ color_primary }}; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="hotel-header">
+  <div class="hotel-name">{{ supplier_name }}</div>
+  <div class="hotel-stars">★ ★ ★ ★</div>
+  <div class="hotel-address">
+    {{ supplier_address }}<br>
+    {% if supplier_phone %}Tel: {{ supplier_phone }}{% endif %}
+    {% if supplier_email %} | {{ supplier_email }}{% endif %}
+  </div>
+</div>
+
+<div class="folio-title">Guest Folio</div>
+
+<div class="guest-info">
+  <div class="guest-col">
+    <div class="info-row"><span class="info-label">Guest Name</span><span class="info-value">{{ customer_name or "Guest" }}</span></div>
+    {% if customer_address %}
+    <div class="info-row"><span class="info-label">Address</span><span class="info-value">{{ customer_address }}</span></div>
+    {% endif %}
+    {% if customer_id %}
+    <div class="info-row"><span class="info-label">Confirmation</span><span class="info-value">{{ customer_id }}</span></div>
+    {% endif %}
+  </div>
+  <div class="guest-col">
+    <div class="info-row"><span class="info-label">Folio No.</span><span class="info-value">{{ invoice_number or document_number }}</span></div>
+    <div class="info-row"><span class="info-label">Check-In</span><span class="info-value">{{ document_date_formatted }}</span></div>
+    {% if due_date %}
+    <div class="info-row"><span class="info-label">Check-Out</span><span class="info-value">{{ due_date_formatted }}</span></div>
+    {% endif %}
+    <div class="info-row"><span class="info-label">Room</span><span class="info-value">{{ reference_numbers or "301" }}</span></div>
+  </div>
+</div>
+
+<table class="charges-table">
+  <thead>
+    <tr>
+      <th style="width: 12%">Date</th>
+      <th>Description</th>
+      <th class="num">Qty</th>
+      <th class="num">Rate</th>
+      <th class="num">Amount ({{ document_currency }})</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in line_items %}
+    <tr>
+      <td class="date">{{ document_date_formatted }}</td>
+      <td>{{ item.description }}</td>
+      <td class="num">{{ item.quantity }}</td>
+      <td class="num">{{ currency_symbol }}{{ "%.2f"|format(item.unit_price) }}</td>
+      <td class="num">{{ currency_symbol }}{{ "%.2f"|format(item.amount) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="totals-section">
+  <div class="total-line"><span class="total-label">Subtotal</span><span class="total-value">{{ currency_symbol }}{{ "%.2f"|format(document_total_net) }}</span></div>
+  {% for tax in taxes %}
+  <div class="total-line"><span class="total-label">{{ tax.code or "VAT" }} ({{ tax.rate }})</span><span class="total-value">{{ currency_symbol }}{{ "%.2f"|format(tax.value) }}</span></div>
+  {% endfor %}
+  <div class="total-line grand"><span class="total-label">Total</span><span class="total-value">{{ currency_symbol }}{{ "%.2f"|format(document_total_amount) }}</span></div>
+</div>
+
+<div class="payment-note">
+  Payment settled via {{ payment_method or "Card" }} on {{ document_date_formatted }}
+</div>
+
+{% if notes %}
+<div style="margin-top: 12px; text-align: center; font-size: 8pt; color: #aaa;">{{ notes }}</div>
+{% endif %}
+
+<div class="footer">
+  {% if supplier_company_registrations %}VAT: {{ supplier_company_registrations }} | {% endif %}
+  {% if supplier_website %}<a href="#">{{ supplier_website }}</a> | {% endif %}
+  Thank you for staying with us
+</div>
+
+</body>
+</html>
