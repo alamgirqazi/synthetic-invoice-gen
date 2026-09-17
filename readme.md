@@ -142,14 +142,14 @@ released corpus is the remaining 938. The excluded file names and reasons ship w
 
 ## Templates
 
-Nine template files are in `templates/`. **Six were used for the released corpus:**
+Ten template files are in `templates/`. **Six were used for the released corpus:**
 
 `formal_corporate` · `modern_minimal` · `pos_thermal` · `freelancer_invoice` · `event_ticket` · `utility_bill`
 
-The other three — `delivery_note`, `retail_receipt`, `taxi_receipt` — are retained for users
-extending the corpus but are not reachable from `DOC_TYPE_TO_LAYOUT`, which maps all fifteen document
-types onto the six layouts above. A taxi receipt, for example, is sampled as a document type but
-rendered through `pos_thermal`.
+The other four — `delivery_note`, `retail_receipt`, `taxi_receipt`, `hotel_receipt` — are retained
+for users extending the corpus but are not reachable from `DOC_TYPE_TO_LAYOUT`, which maps all
+fifteen document types onto the six layouts above. A taxi receipt, for example, is sampled as a
+document type but rendered through `pos_thermal`, and a hotel receipt through `modern_minimal`.
 
 Template selection is rule-based on the record's layout hint, document type, subcategory and
 category, with a weighted random fallback. Each render draws a colour scheme from a ten-palette pool
